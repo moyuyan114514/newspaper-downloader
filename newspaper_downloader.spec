@@ -73,7 +73,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='报纸下载器',
+    name='电子报下载器-v0.5.1',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
