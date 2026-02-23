@@ -1,0 +1,46 @@
+{
+    "app_name": "报纸下载器",
+    "version": "0.5.0",
+    "default_output_dir": "./downloads",
+    "newspapers": {
+        "rmrb": {
+            "name": "人民日报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "xuexishibao": {
+            "name": "学习时报",
+            "enabled": true,
+            "update_days": [0, 2, 4]
+        },
+        "guangming": {
+            "name": "光明日报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "xinhua_daily": {
+            "name": "新华每日电讯",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "zhonghuadushu": {
+            "name": "中华读书报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "wenzhai": {
+            "name": "文摘报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        }
+    },
+    "download": {
+        "max_retries": 3,
+        "timeout": 60,
+        "chunk_size": 8192
+    },
+    "ui": {
+        "theme": "default",
+        "language": "zh_CN"
+    }
+}
