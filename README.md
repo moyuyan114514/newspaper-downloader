@@ -29,7 +29,7 @@
 
 ## 截图
 
-![主界面](docs/screenshots/main.png)
+![主界面](docs/main.png)
 
 ## 下载安装
 
@@ -176,9 +176,3 @@ MIT License - 详见 LICENSE 文件
 - 本工具仅用于学习交流，请勿用于商业用途
 - 下载的报纸内容版权归原作者所有
 - 使用本工具下载的内容仅供个人阅读
-
----
-
-<p align="center">
-  Made with ❤️ for newspaper readers
-</p>
