@@ -57,3 +57,29 @@ Option 3: Hybrid approach (Recommended default) – start with Plan A, pick key 
 - The project shows solid structure and thoughtful design. A structured plan and version-control onboarding will help accelerate safe, scalable progress from plan to build.
 
 If you want, I can push the first concrete steps now (Plan A) by generating a small patch that adds PLAN.md, a minimal CONTRIBUTING.md, and a skeleton for a PyTest-based tests directory. Once you choose the option, I’ll proceed with the next patch.
+
+---
+
+## 进度更新 (2026-09-30)
+
+对照第 2 节的审计结论，当前状态：
+
+| 审计项 | 状态 |
+|--------|------|
+| config 不一致（DEFAULT_CONFIG vs config.json） | ✅ 已解决——两侧同步维护 9 份报纸配置 |
+| 测试依赖真实网络 | ⏳ 未变——`test_downloader_functions.py` 仍为联网脚本；2026-09-30 已人工实测 9 份报纸近三个月历史下载并记录于 docs/README.md |
+| 未初始化 Git 仓库 | ⏳ 未变 |
+| 日志未落盘 | ⏳ 未变 |
+| 下载器解析逻辑分散 | 部分改善——新增 gmw_base 可覆盖 URL 构造与整版图提取兜底；人民日报模板参数化（PAPER_PATH），子报两行接入 |
+
+本轮实际变更（详见 README 版本历史 v0.5.1）：
+
+- 修复光明日报元组 bug（此前完全无法下载）与光明网系历史日期失效（此前任何日期均返回最新一期）。
+- 新增讽刺与幽默、解放军报（JSON 接口直连 PDF）、中国青年报三个下载器，总计 9 份报纸。
+- 新增 png2pdf.py（PNG/JPG 报纸图片合并转 PDF）。
+- 重新打包并冒烟测试 exe。
+
+已知的站点侧遗留问题（代码无法修复）：
+
+- 中华读书报自 2026-09-16 起在 epaper.gmw.cn 停更。
+- mrdx.cn 页面上的"PDF下载"按钮为死链，新华每日电讯只能走图片路线。

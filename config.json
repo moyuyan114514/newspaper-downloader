@@ -32,6 +32,21 @@
             "name": "文摘报",
             "enabled": true,
             "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "fcyym": {
+            "name": "讽刺与幽默",
+            "enabled": true,
+            "update_days": [4]
+        },
+        "jiefangjun": {
+            "name": "解放军报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "zqb": {
+            "name": "中国青年报",
+            "enabled": true,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
         }
     },
     "download": {

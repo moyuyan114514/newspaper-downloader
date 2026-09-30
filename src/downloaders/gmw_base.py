@@ -2,11 +2,11 @@
 """
 光明日报、文摘报、中华读书报的公共基类
 """
+import re
 from abc import ABC
-from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 from .base import PlatformDownloaderBase, EditionInfo
 from ..utils.logger import logger
 
@@ -31,71 +31,83 @@ class GMWDownloaderBase(PlatformDownloaderBase):
     def _log_warning(self, message: str):
         logger.warning(message)
     
+    def _get_latest_date(self) -> Optional[str]:
+        """从 index 页解析最新一期的真实日期
+
+        Returns:
+            日期字符串 (YYYY-MM-DD)，解析失败返回 None
+        """
+        try:
+            resp = self._session.get(self._index_url, timeout=30)
+            resp.raise_for_status()
+            resp.encoding = 'utf-8'
+        except Exception as e:
+            self._log_error(f"获取{self.PAPER_NAME}最新期号失败: {e}")
+            return None
+
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        list_ul = soup.find('ul', id='list')
+        if not list_ul:
+            return None
+
+        a = list_ul.find('a', href=True)
+        if not a:
+            return None
+
+        m = re.search(r'(\d{6})/(\d{2})/node_\d+\.html', a.get('href', ''))
+        if not m:
+            return None
+
+        ym = m.group(1)
+        return f"{ym[:4]}-{ym[4:6]}-{m.group(2)}"
+
+    def _get_latest_edition(self) -> Optional[EditionInfo]:
+        latest_date = self._get_latest_date()
+        if not latest_date:
+            self._log_error(f"{self.PAPER_NAME} 无法确定最新期号")
+            return None
+        return self._get_edition_by_date(latest_date)
+
+    def _page_node_url(self, date_formatted: str, page_num: int) -> str:
+        """构造版面页 URL，子类可覆盖以适配不同路径结构"""
+        return f'{self.BASE_URL}/{self.PAPER_CODE}/html/layout/{date_formatted}/node_{page_num:02d}.html'
+
     def _get_edition_by_date(self, date: str) -> Optional[EditionInfo]:
         """根据日期获取版面信息
-        
+
+        版面页按日期存放，版号可能有跳号，逐个请求直到连续取不到图片为止。
+
         Args:
             date: 日期字符串，格式为 YYYY-MM-DD
-            
+
         Returns:
             EditionInfo 包含版面信息和页面URL列表
         """
         date_str = date.replace('-', '')
         date_formatted = f"{date_str[:4]}{date_str[4:6]}/{date_str[6:8]}"
-        
-        try:
-            resp = self._session.get(self._index_url, timeout=30)
-            resp.raise_for_status()
-            resp.encoding = 'utf-8'
-            html = resp.text
-        except Exception as e:
-            self._log_error(f"获取版面列表失败: {e}")
-            return None
-        
-        soup = BeautifulSoup(html, 'html.parser')
-        
-        list_ul = soup.find('ul', id='list')
+
         page_urls = []
-        page_names = []
-        
-        if list_ul:
-            for li in list_ul.find_all('li'):
-                a = li.find('a', href=True)
-                if a and a.get('href'):
-                    href = a.get('href')
-                    if href.startswith('http'):
-                        page_url = href
-                    else:
-                        page_url = f'{self.BASE_URL}/{self.PAPER_CODE}/html/layout/{href}'
-                    page_urls.append(page_url)
-                    
-                    page_name = li.get_text(strip=True)
-                    page_names.append(page_name)
-        
-        if not page_urls:
-            for page in range(1, 20):
-                page_url = f'{self.BASE_URL}/{self.PAPER_CODE}/html/layout/{date_formatted}/node_{page:02d}.html'
-                page_urls.append(page_url)
-                page_names.append(f"第{page}版")
-        
-        return self._fetch_all_page_images(page_urls, page_names, date_str, date)
-    
-    def _fetch_all_page_images(self, page_urls: List[str], page_names: List[str], date_str: str, date: str) -> Optional[EditionInfo]:
-        """获取所有版面的图片URL"""
-        image_urls = []
-        for i, page_url in enumerate(page_urls):
+        page_num = 1
+        consecutive_misses = 0
+        while page_num <= 40 and consecutive_misses < 3:
+            page_url = self._page_node_url(date_formatted, page_num)
             img_url = self._get_page_image_url(page_url)
-            if img_url:
-                image_urls.append(img_url)
-        
-        if not image_urls:
+            if not img_url:
+                consecutive_misses += 1
+            else:
+                consecutive_misses = 0
+                page_urls.append(img_url)
+            page_num += 1
+
+        if not page_urls:
+            self._log_warning(f"{self.PAPER_NAME} {date} 未找到任何版面")
             return None
-        
+
         return EditionInfo(
-            url=image_urls[0] if len(image_urls) == 1 else "",
+            url=page_urls[0] if len(page_urls) == 1 else "",
             filename=f"{self.PAPER_NAME}_{date_str}.pdf",
             date=date,
-            page_urls=image_urls
+            page_urls=page_urls
         )
     
     def _get_page_image_url(self, page_url: str) -> Optional[str]:
@@ -131,7 +143,16 @@ class GMWDownloaderBase(PlatformDownloaderBase):
                 abs_url = urljoin(page_url, src)
                 jpg_url = abs_url.replace('.jpg.2', '.jpg')
                 return jpg_url, page_name
-        
+
+        # 兜底：部分站点的整版图不带 id="map"，但有 USEMAP 或 pic/ 路径
+        # （如中国青年报: <img src="../../../pic/.../xxx.jpg.2" USEMAP=#PagePicMap>）
+        for img in soup.find_all('img'):
+            src = img.get('src') or ''
+            if '.jpg' in src and (img.get('usemap') or '/pic/' in src):
+                abs_url = urljoin(page_url, src)
+                jpg_url = abs_url.replace('.jpg.2', '.jpg')
+                return jpg_url, page_name
+
         return None, page_name
     
     def _extract_image_from_page_wenzhai(self, page_url: str) -> Tuple[Optional[str], str]:

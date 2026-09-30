@@ -73,6 +73,8 @@ Thumbs.db
 # Project specific
 downloads/
 test_downloads/
+下载/
+_e2e_out/
 *.log
 *.json.bak
 error_log.json

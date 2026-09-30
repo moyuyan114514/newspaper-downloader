@@ -6,6 +6,9 @@ from .guangming import GuangmingRibaoDownloader
 from .xinhua_daily import XinhuaDailyDownloader
 from .zhonghuadushu import ZhonghuadushuDownloader
 from .wenzhai import WenzhaiDownloader
+from .fcyym import FengciyuyuDownloader
+from .jiefangjun import JiefangjunDailyDownloader
+from .zqb import ZhongguoQingnianbaoDownloader
 from datetime import datetime, timedelta
 from typing import List
 
@@ -19,6 +22,9 @@ __all__ = [
     "XinhuaDailyDownloader",
     "ZhonghuadushuDownloader",
     "WenzhaiDownloader",
+    "FengciyuyuDownloader",
+    "JiefangjunDailyDownloader",
+    "ZhongguoQingnianbaoDownloader",
 ]
 
 DOWNLOADER_REGISTRY = {
@@ -28,6 +34,9 @@ DOWNLOADER_REGISTRY = {
     "xinhua_daily": XinhuaDailyDownloader,
     "zhonghuadushu": ZhonghuadushuDownloader,
     "wenzhai": WenzhaiDownloader,
+    "fcyym": FengciyuyuDownloader,
+    "jiefangjun": JiefangjunDailyDownloader,
+    "zqb": ZhongguoQingnianbaoDownloader,
 }
 
 def get_downloader(platform_id: str, config):

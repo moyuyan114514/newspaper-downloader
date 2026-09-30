@@ -42,6 +42,21 @@ DEFAULT_CONFIG = {
             "name": "文摘报",
             "enabled": True,
             "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "fcyym": {
+            "name": "讽刺与幽默",
+            "enabled": True,
+            "update_days": [4]
+        },
+        "jiefangjun": {
+            "name": "解放军报",
+            "enabled": True,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
+        },
+        "zqb": {
+            "name": "中国青年报",
+            "enabled": True,
+            "update_days": [0, 1, 2, 3, 4, 5, 6]
         }
     },
     "download": {

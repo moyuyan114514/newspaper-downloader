@@ -36,12 +36,6 @@ class WenzhaiDownloader(GMWDownloaderBase):
             self._log_error(f"获取{self.PAPER_NAME}版面信息失败: {e}")
             return None
     
-    def _get_latest_edition(self):
-        from datetime import datetime
-        today = datetime.now()
-        date_str = today.strftime('%Y-%m-%d')
-        return self._get_edition_by_date(date_str)
-    
     def _get_page_image_url(self, page_url: str) -> Optional[str]:
         """文摘报使用备用图片提取逻辑"""
         img_url, _ = self._extract_image_from_page_wenzhai(page_url)
