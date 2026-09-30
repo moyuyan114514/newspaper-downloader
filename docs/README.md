@@ -7,7 +7,7 @@
 ```
 newspaper-downloader/
 ├── dist/                        # 发布目录
-│   └── 电子报下载器-v0.5.1.exe  # 单文件可执行程序（约 69 MB）
+│   └── 电子报下载器-v0.6.0.exe  # 单文件可执行程序（约 69 MB）
 ├── icon.ico                     # 应用图标
 ├── main.py                      # 主程序入口
 ├── config.json                  # 配置文件（报纸清单、下载参数）
@@ -84,7 +84,7 @@ newspaper-downloader/
 ## 使用方式
 
 ### 方式一：直接运行 EXE（推荐）
-双击 `dist/电子报下载器-v0.5.1.exe` 即可运行
+双击 `dist/电子报下载器-v0.6.0.exe` 即可运行
 
 ### 方式二：从源码运行
 ```bash
@@ -101,7 +101,7 @@ python png2pdf.py ./downloads/人民日报/2026-09-30 -o 人民日报_20260930.p
 
 ```bash
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出: dist/电子报下载器-v0.5.1.exe（约 69 MB）
+# 输出: dist/电子报下载器-v0.6.0.exe（约 69 MB）
 # 注意: 新增下载器模块后需同步更新 spec 的 hiddenimports
 ```
 

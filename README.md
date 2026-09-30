@@ -32,7 +32,7 @@
 
 ### 方式一：直接下载 exe（推荐）
 
-前往 [Releases](../../releases) 页面下载最新版本的 `电子报下载器-v0.5.1.exe`，双击运行即可。
+前往 [Releases](../../releases) 页面下载最新版本的 `电子报下载器-v0.6.0.exe`，双击运行即可。
 
 ### 方式二：从源码运行
 
@@ -50,7 +50,7 @@ python main.py
 
 ## 版本历史
 
-### v0.5.1 (2026-09-30)
+### v0.6.0 (2026-09-30)
 - ✨ 新增讽刺与幽默、解放军报、中国青年报支持（现共 9 份报纸）
 - ✨ 新增 png2pdf.py：把已保存的 PNG/JPG 报纸图片合并为 PDF
 - 🔧 修复光明日报无法下载的问题（版面图片 URL 解析返回了错误类型）
@@ -132,7 +132,7 @@ pip install pyinstaller
 pyinstaller newspaper_downloader.spec --noconfirm
 
 # 输出文件
-# dist/电子报下载器-v0.5.1.exe
+# dist/电子报下载器-v0.6.0.exe
 ```
 
 ## 项目结构
@@ -167,7 +167,7 @@ newspaper-downloader/
 │       ├── logger.py       # 日志模块
 │       └── pdf_tools.py    # PDF 工具（合并、JPG转PDF）
 ├── dist/                   # 发布目录
-│   └── 电子报下载器-v0.5.1.exe
+│   └── 电子报下载器-v0.6.0.exe
 ├── docs/                   # 文档
 └── PLAN.md                 # 改进计划
 ```

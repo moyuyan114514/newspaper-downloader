@@ -72,7 +72,7 @@ If you want, I can push the first concrete steps now (Plan A) by generating a sm
 | 日志未落盘 | ⏳ 未变 |
 | 下载器解析逻辑分散 | 部分改善——新增 gmw_base 可覆盖 URL 构造与整版图提取兜底；人民日报模板参数化（PAPER_PATH），子报两行接入 |
 
-本轮实际变更（详见 README 版本历史 v0.5.1）：
+本轮实际变更（详见 README 版本历史 v0.6.0）：
 
 - 修复光明日报元组 bug（此前完全无法下载）与光明网系历史日期失效（此前任何日期均返回最新一期）。
 - 新增讽刺与幽默、解放军报（JSON 接口直连 PDF）、中国青年报三个下载器，总计 9 份报纸。
