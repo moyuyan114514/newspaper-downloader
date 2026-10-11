@@ -46,6 +46,17 @@ class PlatformDownloaderBase(ABC):
     @abstractmethod
     def get_latest_edition(self, date: str = None) -> Optional[EditionInfo]:
         pass
+
+    def has_edition(self, date: str) -> bool:
+        """轻量探测指定日期是否有报，仅检查第一版，不做全版面枚举。
+
+        默认回退到完整获取；逐版循环型下载器应重写为单请求探测。
+        """
+        try:
+            edition = self.get_latest_edition(date)
+        except Exception:
+            return False
+        return bool(edition and edition.page_urls)
     
     @abstractmethod
     def get_platform_name(self) -> str:

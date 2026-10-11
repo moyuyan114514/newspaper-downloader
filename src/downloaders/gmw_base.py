@@ -72,6 +72,12 @@ class GMWDownloaderBase(PlatformDownloaderBase):
         """构造版面页 URL，子类可覆盖以适配不同路径结构"""
         return f'{self.BASE_URL}/{self.PAPER_CODE}/html/layout/{date_formatted}/node_{page_num:02d}.html'
 
+    def has_edition(self, date: str) -> bool:
+        """轻量探测：仅请求第一版页面判断当日是否有报"""
+        date_str = date.replace('-', '')
+        date_formatted = f"{date_str[:4]}{date_str[4:6]}/{date_str[6:8]}"
+        return self._get_page_image_url(self._page_node_url(date_formatted, 1)) is not None
+
     def _get_edition_by_date(self, date: str) -> Optional[EditionInfo]:
         """根据日期获取版面信息
 

@@ -65,6 +65,13 @@ class PeopleDailyDownloader(PlatformDownloaderBase):
             page_urls=page_urls
         )
 
+    def has_edition(self, date: str) -> bool:
+        """轻量探测：仅请求第一版页面判断当日是否有报"""
+        date_str = date.replace('-', '')
+        date_path = date_str[0:6] + '/' + date_str[6:8]
+        url = f"{self.BASE_URL}/{self.PAPER_PATH}/pc/layout/{date_path}/node_01.html"
+        return self._get_pdf_url(url) is not None
+
     def _get_edition_by_date(self, date: str) -> Optional[EditionInfo]:
         date_str = date.replace('-', '')
         date_path = date_str[0:6] + '/' + date_str[6:8]

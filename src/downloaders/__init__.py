@@ -49,31 +49,30 @@ def get_available_platforms():
     return list(DOWNLOADER_REGISTRY.keys())
 
 def check_available_dates(platform_id: str, config, days: int = 7) -> List[str]:
-    """检查报纸在指定天数内哪些日期有更新
-    
+    """检查报纸在指定天数内哪些日期有更新（轻量探测，仅查各日期第一版）
+
     Args:
         platform_id: 报纸平台ID
         config: 配置对象
         days: 检查的天数
-        
+
     Returns:
         有更新的日期列表 (格式: YYYY-MM-DD)
     """
     downloader = get_downloader(platform_id, config)
     if not downloader:
         return []
-    
+
     available_dates = []
-    
+
     for i in range(days):
         check_date = datetime.now() - timedelta(days=i)
         date_str = check_date.strftime('%Y-%m-%d')
-        
+
         try:
-            edition = downloader.get_latest_edition(date_str)
-            if edition and edition.page_urls and len(edition.page_urls) > 0:
+            if downloader.has_edition(date_str):
                 available_dates.append(date_str)
         except Exception:
             pass
-    
+
     return available_dates
