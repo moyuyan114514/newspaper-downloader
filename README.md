@@ -1,4 +1,4 @@
-# 报纸下载器
+﻿# 报纸下载器
 
 <p align="center">
   <img src="icon.ico" alt="Logo" width="128" height="128">
@@ -34,12 +34,12 @@
 
 ### 方式一：直接下载（推荐）
 
-前往 [Releases](../../releases) 页面下载 v0.7.0，两种包任选：
+前往 [Releases](../../releases) 页面下载 v0.7.1，两种包任选：
 
 | 包 | 适用场景 | 说明 |
 |----|----------|------|
-| `NewspaperDownloader-v0.7.0-portable.zip` | **推荐**，兼容性最好 | 解压到任意**纯英文路径**后，运行文件夹内的 `电子报下载器-v0.7.0-目录版.exe` |
-| `NewspaperDownloader-v0.7.0.exe` | 便于单文件分发 | 双击即用；启动时需解压到系统临时目录，极少数环境下可能报 "Could not create temporary directory!"，此时请改用上面的 zip 包 |
+| `NewspaperDownloader-v0.7.1-portable.zip` | **推荐**，兼容性最好 | 解压到任意**纯英文路径**后，运行文件夹内的 `电子报下载器-v0.7.1-目录版.exe` |
+| `NewspaperDownloader-v0.7.1.exe` | 便于单文件分发 | 双击即用；启动时需解压到系统临时目录，极少数环境下可能报 "Could not create temporary directory!"，此时请改用上面的 zip 包 |
 
 > 💡 若单文件版启动报 "Could not create temporary directory!"（临时目录被占用或权限受限），改用 zip 目录版即可——目录版不做运行时自解压，不依赖系统临时目录。
 
@@ -98,6 +98,9 @@ python png2pdf.py 第1版.png 第2版.png 第3版.png
 
 ## 版本历史
 
+### v0.7.1 (2026-10-11)
+- 🔧 修复「最新一期」仅尝试当天的问题：改为从今天起自动往前逐日探测（最多回看 7 天），找到最近一个有版面的日期再下载
+
 ### v0.7.0 (2026-10-11)
 - ✨ 新增「日期区间」批量下载模式：任选起止日期逐日下载（上限 62 天，超 30 天会提示频繁网络请求风险）
 - 🔧 原「最近半年」改为「最近两月」（62 天），减少批量下载时的网络压力
@@ -136,7 +139,7 @@ python png2pdf.py 第1版.png 第2版.png 第3版.png
 ```bash
 pip install -r requirements.txt pyinstaller
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出：dist/电子报下载器-v0.7.0.exe
+# 输出：dist/电子报下载器-v0.7.1.exe
 ```
 
 架构说明、目录结构、添加新报纸教程、打包发布流程与排错指南，见 [开发文档](docs/README.md)；项目审计与改进计划见 [PLAN.md](PLAN.md)。

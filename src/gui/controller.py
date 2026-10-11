@@ -298,6 +298,87 @@ class BatchDownloadWorker(QObject):
         self.log_signal.emit(f"[{level}] {message}")
 
 
+class LatestFindWorker(BatchDownloadWorker):
+    """「最新一期」Worker：从今天起逐日轻量探测，找到最近有版面的日期后下载该期。
+
+    继承 BatchDownloadWorker 以复用其 _download_single 下载通道与信号定义；
+    仅覆写 run()：先做 has_edition 探测（忙碌进度 maximum=0），探到日期后
+    把 dates 收敛为单期再走父类批量流程（单期）。
+    """
+
+    # 往前探测的克制边界：最多回看 7 天，不做无限回溯
+    MAX_PROBE_DAYS = 7
+
+    def __init__(self, platform_id: str, output_dir: str,
+                 max_days: int = MAX_PROBE_DAYS):
+        super().__init__(platform_id, [], output_dir)
+        self.max_days = max_days
+
+    def run(self):
+        try:
+            if self.output_dir:
+                self.storage = StorageManager(self.output_dir)
+
+            downloader = get_downloader(self.platform_id, config)
+            if not downloader:
+                self._log("ERROR", f"未知的平台: {self.platform_id}")
+                self.complete_signal.emit(0, 0, 1)
+                return
+
+            newspaper_info = config.get_newspaper(self.platform_id)
+            newspaper_name = newspaper_info.get("name", self.platform_id) if newspaper_info else self.platform_id
+
+            self._log("INFO", f"开始查找 {newspaper_name} 的最新一期（最多往前 {self.max_days} 天）...")
+
+            # 探测阶段：从今天起逐日 has_edition（轻量，仅查第一版），忙碌进度
+            found_date = None
+            for i in range(self.max_days):
+                if self._cancel_requested:
+                    self._log("INFO", "已取消查找")
+                    self.complete_signal.emit(0, 0, 0)
+                    return
+
+                check_date = datetime.now() - timedelta(days=i)
+                date_str = check_date.strftime('%Y-%m-%d')
+                self.progress_signal.emit(0, 0, f"正在探测 {date_str} 是否有报…")
+                self._log("INFO", f"正在探测 {date_str} 是否有报…")
+
+                try:
+                    has = downloader.has_edition(date_str)
+                except Exception as e:
+                    # 单日探测失败不中断整体流程，与 check_available_dates 的处理一致
+                    self._log("WARNING", f"探测 {date_str} 出错: {str(e)[:50]}")
+                    has = False
+
+                if has:
+                    found_date = date_str
+                    break
+                self._log("INFO", f"{date_str} 无版面，继续往前尝试")
+
+            if not found_date:
+                self._log("WARNING", f"最近 {self.max_days} 天内未找到任何版面")
+                self.complete_signal.emit(0, 0, 0)
+                return
+
+            self._log("INFO", f"找到最近一期: {found_date}，开始下载")
+
+            # 「最新一期」语义：该期文件已存在则直接提示结束，不继续往前找更早的
+            output_path = self.storage.build_output_path(newspaper_name, found_date)
+            if os.path.exists(output_path):
+                self._log("INFO", f"最新一期已存在，跳过下载: {output_path}")
+                self.progress_signal.emit(1000, 1000, "最新一期已存在")
+                self.complete_signal.emit(1, 0, 0)
+                return
+
+            # 收敛为单期日期列表，复用父类批量下载通道（含跳过/合并/清理逻辑）
+            self.dates = [found_date]
+            super().run()
+
+        except Exception as e:
+            self._log("ERROR", f"最新一期下载出错: {str(e)[:50]}")
+            self.complete_signal.emit(0, 0, 1)
+
+
 class DownloadController(QObject):
     def __init__(self):
         super().__init__()
@@ -364,6 +445,33 @@ class DownloadController(QObject):
         self._thread.started.connect(self._worker.run)
         self._thread.start()
     
+    def start_latest_download(
+        self,
+        platform_id: str,
+        output_dir: str,
+        on_progress=None,
+        on_log=None,
+        on_complete=None
+    ):
+        """启动「最新一期」下载：先逐日探测再下载（线程模型与其它模式一致）"""
+        if self._thread and self._thread.isRunning():
+            return
+
+        self._worker = LatestFindWorker(platform_id, output_dir)
+        self._thread = QThread()
+        self._worker.moveToThread(self._thread)
+
+        if on_progress:
+            self._worker.progress_signal.connect(on_progress)
+        if on_log:
+            self._worker.log_signal.connect(on_log)
+        if on_complete:
+            self._worker.complete_signal.connect(on_complete)
+
+        self._worker.complete_signal.connect(self._on_batch_complete)
+        self._thread.started.connect(self._worker.run)
+        self._thread.start()
+
     def _on_complete(self, success: bool, message: str):
         if self._thread:
             self._thread.quit()

@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 import sys
 import os
 
@@ -76,7 +76,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='电子报下载器-v0.7.0',
+    name='电子报下载器-v0.7.1',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

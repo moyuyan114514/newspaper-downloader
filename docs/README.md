@@ -1,4 +1,4 @@
-# 报纸下载器 · 开发文档
+﻿# 报纸下载器 · 开发文档
 
 > Windows GUI 工具，用于下载 9 份报纸的版面 PDF（人民日报/学习时报/光明日报/新华每日电讯/中华读书报/文摘报/讽刺与幽默/解放军报/中国青年报）
 
@@ -425,7 +425,7 @@ Config 单例 (config.py)
 
 ```bash
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出: dist/电子报下载器-v0.7.0.exe （onefile 单文件版，启动时自解压到 %TEMP%）
+# 输出: dist/电子报下载器-v0.7.1.exe （onefile 单文件版，启动时自解压到 %TEMP%）
 ```
 
 ### 目录版构建（可选，推荐随 Release 一起提供）
@@ -435,7 +435,7 @@ pyinstaller newspaper_downloader.spec --noconfirm
 
 ```bash
 pyinstaller newspaper_downloader_ondir.spec --noconfirm
-# 输出: dist/电子报下载器-v0.7.0-目录版/ 文件夹（入口 exe 在其中，整体分发）
+# 输出: dist/电子报下载器-v0.7.1-目录版/ 文件夹（入口 exe 在其中，整体分发）
 ```
 
 - 目录版产物为文件夹（约 146 MB），发布时打成 zip（资产名建议用 ASCII，避免 gh 上传中文名乱码）
@@ -447,7 +447,7 @@ pyinstaller newspaper_downloader_ondir.spec --noconfirm
   - 注：公共基类 `src.downloaders.gmw_base` 未显式列入，靠 `guangming`/`zhonghuadushu`/`wenzhai`/`zqb` 的导入关系被传递打包（实测正常）；新增独立基类时建议显式补齐
 - `datas` 中列出了需要打包进 exe 的数据文件（config.json、icon.ico）
 - `excludes` 中列出了不需要的大体积依赖（tkinter、matplotlib、numpy 等），减小 exe 体积
-- 输出文件名 `name='电子报下载器-v0.7.0'` 需与版本号同步更新
+- 输出文件名 `name='电子报下载器-v0.7.1'` 需与版本号同步更新
 
 ### 发布流程
 
@@ -457,8 +457,8 @@ pyinstaller newspaper_downloader_ondir.spec --noconfirm
 4. 创建 Release 并上传资产（单文件 exe + 目录版 zip，资产名用 ASCII）：
 
 ```bash
-gh release create v0.7.0 NewspaperDownloader-v0.7.0.exe NewspaperDownloader-v0.7.0-portable.zip \
-  --title "v0.7.0" \
+gh release create v0.7.1 NewspaperDownloader-v0.7.0.exe NewspaperDownloader-v0.7.0-portable.zip \
+  --title "v0.7.1" \
   --notes-file release_notes.md
 ```
 

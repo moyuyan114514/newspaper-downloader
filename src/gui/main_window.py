@@ -696,6 +696,18 @@ class MainWindow(QMainWindow):
                 on_complete=self._on_complete,
                 **callbacks
             )
+        elif mode == "latest":
+            # 「最新一期」独立分支：从今天起逐日探测（子线程内做网络请求），
+            # 找到最近一个有版面的日期后下载该期，而不是只尝试今天
+            self.progress_bar.setRange(0, 0)  # 探测阶段：忙碌指示
+            self._set_percent(0)
+            self.status_label.setText("正在探测最新一期…")
+            self.controller.start_latest_download(
+                platform_id=platform_id,
+                output_dir=output_dir,
+                on_complete=self._on_batch_complete,
+                **callbacks
+            )
         else:
             if mode == "range":
                 # 日期区间模式：用户任选起止日期，逐日构造日期列表直接批量下载。

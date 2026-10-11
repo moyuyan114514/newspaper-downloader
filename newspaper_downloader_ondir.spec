@@ -1,7 +1,7 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 # 目录版(onefile 的替代): 不做运行时自解压,完全不依赖 %TEMP%,
 # 规避 "Could not create temporary directory!" 闪退问题。
-# 构建后产物为 dist/电子报下载器-v0.7.0-目录版/ 文件夹,整个文件夹分发,入口 exe 在其中。
+# 构建后产物为 dist/电子报下载器-v0.7.1-目录版/ 文件夹,整个文件夹分发,入口 exe 在其中。
 import sys
 import os
 
@@ -77,7 +77,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,   # 目录版关键项:二进制不打进 exe,放同目录
-    name='电子报下载器-v0.7.0-目录版',
+    name='电子报下载器-v0.7.1-目录版',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -100,5 +100,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='电子报下载器-v0.7.0-目录版',
+    name='电子报下载器-v0.7.1-目录版',
 )
