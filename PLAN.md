@@ -9,9 +9,9 @@
 
 - **技术栈**：Python 3.x + PySide6（GUI）、requests、BeautifulSoup、pypdf（缺失时回退 PyPDF2）、PyInstaller。
 - **结构**：模块化下载器体系（抽象基类 + 各报实现）、GUI 层、单例配置系统、CLI 入口与联网测试脚本。
-- **版本**：v0.7.1，支持 9 份报纸。
+- **版本**：v0.7.2，支持 9 份报纸。
 - **版本控制**：已是 Git 仓库，`main` 分支与 `origin/main` 同步。
-- **产物**：`dist/电子报下载器-v0.7.1.exe`（本地构建，`dist/` 已 gitignore）；下载输出目录 `下载/`、`downloads/` 亦被忽略。
+- **产物**：`dist/电子报下载器-v0.7.2.exe`（本地构建，`dist/` 已 gitignore）；下载输出目录 `下载/`、`downloads/` 亦被忽略。
 
 ---
 
@@ -19,7 +19,7 @@
 
 | 审计项 | 状态 | 说明 |
 |--------|------|------|
-| config 不一致（DEFAULT_CONFIG vs config.json） | ✅ 已解决 | 两侧同步维护 9 份报纸配置，版本号均为 0.7.1 |
+| config 不一致（DEFAULT_CONFIG vs config.json） | ✅ 已解决 | 两侧同步维护 9 份报纸配置，版本号均为 0.7.2 |
 | 未初始化 Git 仓库 | ✅ 已解决 | 已建仓库并推送至 GitHub，Release v0.6.0 含安装包 |
 | 日志未落盘 | 🟡 部分解决 | `logger` 已将 WARNING/ERROR 落盘到根目录 `error_log.json`（保留最近 1000 条）；INFO/DEBUG 仍仅驻内存 |
 | 下载器解析逻辑分散 | 🟡 部分改善 | 新增 `gmw_base` 公共基类（URL 构造、整版图提取兜底）；人民日报模板参数化（`PAPER_PATH`），子报两行接入 |
@@ -50,6 +50,7 @@
 
 ## 5. 变更记录
 
+- **2026-10-11**：v0.7.2 发布。「最新一期」探测窗口从 7 天扩大到 180 天（半年，覆盖各报纸官网历史数据保留范围），探到最近一期即停；探测进度从忙碌指示改为确定性百分比（已探测天数/总窗口），进度条实时反映探测进展。
 - **2026-10-11**：v0.7.1 发布。修复「最新一期」仅尝试当天的问题——新增 LatestFindWorker 从今天起自动往前逐日探测（最多回看 7 天），找到最近有版面的日期再下载；重新打包单文件版与目录版。
 - **2026-10-11**：「最新一期」模式改为自动往前逐日探测——新增 `LatestFindWorker`（子线程内从今天起调用 `has_edition` 轻量探测，最多回看 7 天），找到最近一期后复用 `BatchDownloadWorker._download_single` 通道下载；修复此前仅尝试当天、当天没报就直接结束的问题。该期文件已存在时提示「最新一期已存在」并结束（不继续回溯更早日期）。
 - **2026-10-11**：新增 `newspaper_downloader_ondir.spec` 目录版打包（onedir，不做运行时自解压、不依赖 %TEMP%），排查单文件版在个别环境报 "Could not create temporary directory!" 闪退问题时引入；Release 改为同时提供单文件 exe 与目录版 zip 两种资产，README 下载节与 docs 发布流程同步更新。

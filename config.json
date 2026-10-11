@@ -1,6 +1,6 @@
 ﻿{
     "app_name": "报纸下载器",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "default_output_dir": "./downloads",
     "newspapers": {
         "rmrb": {

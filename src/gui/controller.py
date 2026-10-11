@@ -306,8 +306,8 @@ class LatestFindWorker(BatchDownloadWorker):
     把 dates 收敛为单期再走父类批量流程（单期）。
     """
 
-    # 往前探测的克制边界：最多回看 7 天，不做无限回溯
-    MAX_PROBE_DAYS = 7
+    # 往前探测边界：半年内必有一期（各报纸官网历史数据保留范围），探到即停
+    MAX_PROBE_DAYS = 180
 
     def __init__(self, platform_id: str, output_dir: str,
                  max_days: int = MAX_PROBE_DAYS):
@@ -330,7 +330,8 @@ class LatestFindWorker(BatchDownloadWorker):
 
             self._log("INFO", f"开始查找 {newspaper_name} 的最新一期（最多往前 {self.max_days} 天）...")
 
-            # 探测阶段：从今天起逐日 has_edition（轻量，仅查第一版），忙碌进度
+            # 探测阶段：从今天起逐日 has_edition（轻量，仅查第一版）。
+            # 回看窗口较大（半年），改用确定性进度：已探测天数 / 总天数
             found_date = None
             for i in range(self.max_days):
                 if self._cancel_requested:
@@ -340,8 +341,8 @@ class LatestFindWorker(BatchDownloadWorker):
 
                 check_date = datetime.now() - timedelta(days=i)
                 date_str = check_date.strftime('%Y-%m-%d')
-                self.progress_signal.emit(0, 0, f"正在探测 {date_str} 是否有报…")
-                self._log("INFO", f"正在探测 {date_str} 是否有报…")
+                self.progress_signal.emit(i, self.max_days, f"正在探测 {date_str} 是否有报…（{i + 1}/{self.max_days}）")
+                self._log("INFO", f"正在探测 {date_str} 是否有报…（{i + 1}/{self.max_days}）")
 
                 try:
                     has = downloader.has_edition(date_str)

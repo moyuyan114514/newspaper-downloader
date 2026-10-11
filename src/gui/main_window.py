@@ -698,8 +698,10 @@ class MainWindow(QMainWindow):
             )
         elif mode == "latest":
             # 「最新一期」独立分支：从今天起逐日探测（子线程内做网络请求），
-            # 找到最近一个有版面的日期后下载该期，而不是只尝试今天
-            self.progress_bar.setRange(0, 0)  # 探测阶段：忙碌指示
+            # 找到最近一个有版面的日期后下载该期，而不是只尝试今天。
+            # 探测窗口为半年（180 天），进度条由探测信号驱动（确定性百分比）
+            self.progress_bar.setRange(0, 180)
+            self.progress_bar.setValue(0)
             self._set_percent(0)
             self.status_label.setText("正在探测最新一期…")
             self.controller.start_latest_download(
