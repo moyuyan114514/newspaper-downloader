@@ -4,7 +4,7 @@
 
 设计要点：
 - 报纸选择：3x3 卡片芯片网格，替代原来的下拉框，每张卡片显示报名与出版频率
-- 下载范围：分段控件（指定日期 / 最新一期 / 最近一周 / 最近一月 / 最近半年），
+- 下载范围：分段控件（指定日期 / 最新一期 / 最近一周 / 最近一月 / 最近两月），
   统一由一个主按钮执行，替代原来四个各自触发的批量按钮
 - 进度：大号渐变进度条 + 独立百分比 + 状态行
 - 日志：深色控制台，INFO / WARNING / ERROR 分级着色
@@ -38,8 +38,20 @@ DOWNLOAD_MODES = [
     ("latest", "最新一期", 1),
     ("week", "最近一周", 7),
     ("month", "最近一月", 30),
-    ("half_year", "最近半年", 180),
+    ("half_year", "最近两月", 62),
+    # 日期区间模式：天数无意义（由用户选择的起止日期决定），走独立分支
+    ("range", "日期区间", 0),
 ]
+
+# 批量下载日期范围上限（约两个月），避免对报纸网站产生过大压力
+MAX_BATCH_DAYS = 62
+# 批量天数超过该值时，下载前输出大范围提示
+LARGE_RANGE_THRESHOLD = 30
+# 大范围批量下载提示文案
+LARGE_RANGE_NOTICE = (
+    "批量下载范围较大，会产生较频繁的网络请求，为避免对报纸网站造成压力，"
+    "不建议大批量下载，已限制最多下载两个月。"
+)
 
 
 def format_frequency(update_days) -> str:
@@ -368,6 +380,35 @@ class MainWindow(QMainWindow):
 
         self.mode_buttons["single"].setChecked(True)
         outer.addWidget(bar)
+
+        # 日期区间行：仅「日期区间」模式下可用，与 date_edit 的启用/禁用方式保持一致
+        range_row = QHBoxLayout()
+        range_row.setSpacing(10)
+        range_start_label = QLabel("开始日期")
+        range_start_label.setFixedWidth(64)
+        range_row.addWidget(range_start_label)
+
+        self.range_start_edit = QDateEdit()
+        self.range_start_edit.setCalendarPopup(True)
+        self.range_start_edit.setDate(QDate.currentDate().addDays(-7))
+        self.range_start_edit.setDisplayFormat("yyyy-MM-dd")
+        self.range_start_edit.setFixedWidth(150)
+        range_row.addWidget(self.range_start_edit)
+
+        range_end_label = QLabel("结束日期")
+        range_row.addWidget(range_end_label)
+
+        self.range_end_edit = QDateEdit()
+        self.range_end_edit.setCalendarPopup(True)
+        self.range_end_edit.setDate(QDate.currentDate())
+        self.range_end_edit.setDisplayFormat("yyyy-MM-dd")
+        self.range_end_edit.setFixedWidth(150)
+        range_row.addWidget(self.range_end_edit)
+        range_row.addStretch()
+
+        self.range_row_widget = QWidget()
+        self.range_row_widget.setLayout(range_row)
+        outer.addWidget(self.range_row_widget)
         return card
 
     def _build_progress_card(self):
@@ -501,10 +542,14 @@ class MainWindow(QMainWindow):
         return "single"
 
     def _apply_mode_state(self):
-        """日期控件仅在「指定日期」模式下可用。"""
+        """日期控件仅在「指定日期」模式下可用；区间控件仅在「日期区间」模式下可用。"""
         single = self._current_mode() == "single" and not self._downloading
         self.date_edit.setEnabled(single)
         self.today_btn.setEnabled(single)
+        # 与 single 模式处理 date_edit 的方式一致：非该模式时禁用（不隐藏）
+        range_mode = self._current_mode() == "range" and not self._downloading
+        self.range_start_edit.setEnabled(range_mode)
+        self.range_end_edit.setEnabled(range_mode)
 
     def _set_downloading_state(self, downloading: bool):
         self._downloading = downloading
@@ -652,14 +697,51 @@ class MainWindow(QMainWindow):
                 **callbacks
             )
         else:
-            days = dict((m, d) for m, _l, d in DOWNLOAD_MODES)[mode]
-            dates = self.controller.get_dates_for_range(platform_id, days)
+            if mode == "range":
+                # 日期区间模式：用户任选起止日期，逐日构造日期列表直接批量下载。
+                # 注意：该模式不做出版日过滤（如 xuexishibao 仅 [0,2,4] 出版），
+                # 非出版日逐日尝试、无版面时由批量通道告警跳过，属可接受现状。
+                start = self.range_start_edit.date()
+                end = self.range_end_edit.date()
+                # 校验开始不晚于结束，倒挂时提示并放弃本次下载
+                if start > end:
+                    self._set_downloading_state(False)
+                    self._log("开始日期不能晚于结束日期，请检查日期区间。", level="WARNING")
+                    self.status_label.setText("日期区间无效")
+                    return
+                # 限制批量下载范围上限，超出部分截断为开始+61 天（含首尾共 62 天）
+                span = start.daysTo(end) + 1
+                if span > MAX_BATCH_DAYS:
+                    end = start.addDays(MAX_BATCH_DAYS - 1)
+                    self._log(f"日期区间已限制为最多 {MAX_BATCH_DAYS} 天（约两个月）。", level="WARNING")
+                # 范围较大时给出提示，提醒用户注意对报纸网站的压力
+                if start.daysTo(end) + 1 > LARGE_RANGE_THRESHOLD:
+                    self._log(LARGE_RANGE_NOTICE, level="WARNING")
+                dates = []
+                cur = start
+                while cur <= end:
+                    dates.append(cur.toString("yyyy-MM-dd"))
+                    cur = cur.addDays(1)
+                on_complete = self._on_batch_complete
+                extra = dict(on_date_progress=self._on_date_progress)
+            else:
+                days = dict((m, d) for m, _l, d in DOWNLOAD_MODES)[mode]
+                # 限制批量下载范围上限，超出部分截断并提示用户
+                if days > MAX_BATCH_DAYS:
+                    days = MAX_BATCH_DAYS
+                    self._log(f"批量下载范围已限制为最多 {MAX_BATCH_DAYS} 天（约两个月）。", level="WARNING")
+                # 范围较大时给出提示，提醒用户注意对报纸网站的压力
+                if days > LARGE_RANGE_THRESHOLD:
+                    self._log(LARGE_RANGE_NOTICE, level="WARNING")
+                dates = self.controller.get_dates_for_range(platform_id, days)
+                on_complete = self._on_batch_complete
+                extra = dict(on_date_progress=self._on_date_progress)
             self.controller.start_batch_download(
                 platform_id=platform_id,
                 dates=dates,
                 output_dir=output_dir,
-                on_complete=self._on_batch_complete,
-                on_date_progress=self._on_date_progress,
+                on_complete=on_complete,
+                **extra,
                 **callbacks
             )
 
