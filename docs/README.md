@@ -425,7 +425,7 @@ Config 单例 (config.py)
 
 ```bash
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出: dist/电子报下载器-v0.6.0.exe
+# 输出: dist/电子报下载器-v0.7.0.exe
 ```
 
 ### spec 文件注意事项
@@ -434,7 +434,7 @@ pyinstaller newspaper_downloader.spec --noconfirm
   - 注：公共基类 `src.downloaders.gmw_base` 未显式列入，靠 `guangming`/`zhonghuadushu`/`wenzhai`/`zqb` 的导入关系被传递打包（实测正常）；新增独立基类时建议显式补齐
 - `datas` 中列出了需要打包进 exe 的数据文件（config.json、icon.ico）
 - `excludes` 中列出了不需要的大体积依赖（tkinter、matplotlib、numpy 等），减小 exe 体积
-- 输出文件名 `name='电子报下载器-v0.6.0'` 需与版本号同步更新
+- 输出文件名 `name='电子报下载器-v0.7.0'` 需与版本号同步更新
 
 ### 发布流程
 
@@ -444,8 +444,8 @@ pyinstaller newspaper_downloader.spec --noconfirm
 4. 创建 Release 并上传 exe：
 
 ```bash
-gh release create v0.6.0 dist/电子报下载器-v0.6.0.exe \
-  --title "v0.6.0" \
+gh release create v0.7.0 dist/电子报下载器-v0.7.0.exe \
+  --title "v0.7.0" \
   --notes-file release_notes.md
 ```
 
@@ -460,7 +460,7 @@ gh release create v0.6.0 dist/电子报下载器-v0.6.0.exe \
 | `docs/README.md` | 三处 exe 文件名引用 |
 | `PLAN.md` | 版本引用 |
 
-快捷搜索：`grep -r "0\.6\.0" .` 检查是否有遗漏。
+快捷搜索：`grep -r "0\.7\.0" .` 检查是否有遗漏。
 
 ---
 

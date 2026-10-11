@@ -34,7 +34,7 @@
 
 ### 方式一：直接下载 exe（推荐）
 
-前往 [Releases](../../releases) 页面下载最新版本的 `电子报下载器-v0.6.0.exe`，双击运行即可。
+前往 [Releases](../../releases) 页面下载最新版本的 `电子报下载器-v0.7.0.exe`，双击运行即可。
 
 ### 方式二：从源码运行
 
@@ -91,6 +91,12 @@ python png2pdf.py 第1版.png 第2版.png 第3版.png
 
 ## 版本历史
 
+### v0.7.0 (2026-10-11)
+- ✨ 新增「日期区间」批量下载模式：任选起止日期逐日下载（上限 62 天，超 30 天会提示频繁网络请求风险）
+- 🔧 原「最近半年」改为「最近两月」（62 天），减少批量下载时的网络压力
+- ⚡ 日期可用性检查改为轻量探测 `has_edition`：只请求第一版页面，批量检查日期时网络请求大幅减少
+- 📝 文档三件套去重分工：README 面向用户瘦身，PLAN.md 重写为路线图，docs/README.md 补已知限制
+
 ### v0.6.0 (2026-09-30)
 - ✨ 新增讽刺与幽默、解放军报、中国青年报支持（现共 9 份报纸）
 - ✨ 新增 png2pdf.py：把已保存的 PNG/JPG 报纸图片合并为 PDF
@@ -123,7 +129,7 @@ python png2pdf.py 第1版.png 第2版.png 第3版.png
 ```bash
 pip install -r requirements.txt pyinstaller
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出：dist/电子报下载器-v0.6.0.exe
+# 输出：dist/电子报下载器-v0.7.0.exe
 ```
 
 架构说明、目录结构、添加新报纸教程、打包发布流程与排错指南，见 [开发文档](docs/README.md)；项目审计与改进计划见 [PLAN.md](PLAN.md)。

@@ -10,7 +10,7 @@ from typing import Optional, List
 
 DEFAULT_CONFIG = {
     "app_name": "报纸下载器",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "default_output_dir": "./downloads",
     "newspapers": {
         "rmrb": {
@@ -116,7 +116,7 @@ class Config:
     
     @property
     def version(self) -> str:
-        return self._config.get("version", "0.6.0")
+        return self._config.get("version", "0.7.0")
     
     @property
     def default_output_dir(self) -> str:
