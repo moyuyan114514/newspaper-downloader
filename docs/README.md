@@ -17,6 +17,7 @@
 - [构建与发布](#构建与发布)
 - [调试与排错](#调试与排错)
 - [常见坑点](#常见坑点)
+- [已知限制与待改进](#已知限制与待改进)
 
 ---
 
@@ -305,9 +306,11 @@ def _page_node_url(self, date_formatted: str, page_num: int) -> str:
 - [ ] `get_latest_edition("2026-09-15")` 能获取指定历史日期
 - [ ] `page_urls` 非空且 URL 可直接下载
 - [ ] 输出 PDF 能正常打开、版面顺序正确
-- [ ] 批量下载时跳过非出版日（在 config 中设置 `update_days`）
+- [ ] 在 config 中设置 `update_days`，界面出版频率显示正确
 - [ ] spec 的 hiddenimports 已更新
 - [ ] README 支持的报纸表格已更新
+
+> ⚠️ 注意：`update_days` 目前**只影响界面上的出版频率显示**，批量下载的日期过滤尚未读取它（详见「已知限制与待改进」）。周报/隔日报新增后，批量下载仍会逐日尝试。
 
 ---
 
@@ -396,6 +399,12 @@ Config 单例 (config.py)
 - `config.json` 中的字段会覆盖 `DEFAULT_CONFIG` 中对应的字段
 - 合并是**浅合并**（一级 key 对应的值整体替换/更新），所以 `newspapers` 下的子字典会整体更新
 
+### `update_days` 的含义与现状
+
+- 取值是 Python `datetime.weekday()` 编号的列表（周一=0 … 周日=6），如学习时报周一/三/五出版 → `[0, 2, 4]`。
+- **当前用途**：仅驱动界面上的出版频率文案（`main_window.format_frequency()`，长度为 7 时显示「每日出版」）。
+- **尚未生效**：批量下载的日期过滤写在 `controller.get_dates_for_range()` 里，目前只对学习时报硬编码了 `[0, 2, 4]`，其余报纸一律按自然日尝试。因此周报类报纸批量下载时会对非出版日产生「未找到任何版面」告警（见根目录 `error_log.json`）。GUI 的「日期区间」模式直接构造日期列表调 `start_batch_download()`，不经过 `get_dates_for_range()`，因此同样不做出版日过滤。
+
 ### 添加新配置项
 
 1. 在 `DEFAULT_CONFIG` 中添加默认值
@@ -421,7 +430,8 @@ pyinstaller newspaper_downloader.spec --noconfirm
 
 ### spec 文件注意事项
 
-- `hiddenimports` 中列出了所有下载器模块，**新增下载器必须同步添加**
+- `hiddenimports` 中列出了各下载器模块，**新增下载器必须同步添加**
+  - 注：公共基类 `src.downloaders.gmw_base` 未显式列入，靠 `guangming`/`zhonghuadushu`/`wenzhai`/`zqb` 的导入关系被传递打包（实测正常）；新增独立基类时建议显式补齐
 - `datas` 中列出了需要打包进 exe 的数据文件（config.json、icon.ico）
 - `excludes` 中列出了不需要的大体积依赖（tkinter、matplotlib、numpy 等），减小 exe 体积
 - 输出文件名 `name='电子报下载器-v0.6.0'` 需与版本号同步更新
@@ -557,12 +567,37 @@ JSON 中是 `true`/`false`（小写），Python 中是 `True`/`False`（大写�
 ### 7. update_days 的编号
 
 `update_days` 使用 Python `datetime.weekday()` 的编号：周一=0, 周二=1, ..., 周日=6。
-学习时报周一/三/五出版 → `[0, 2, 4]`
-讽刺与幽默周五出版 → `[4]`
+学习时报周一/三/五出版 → `[0, 2, 4]`；讽刺与幽默周五出版 → `[4]`。
+其当前生效范围见「配置系统 → update_days 的含义与现状」。
+
+---
+
+## 已知限制与待改进
+
+以下是代码层面已确认、但尚未修复的限制，完整待办见 [PLAN.md](../PLAN.md)。
+
+### 1. 批量下载未按出版日过滤
+
+`controller.get_dates_for_range()` 只对学习时报硬编码了 `[0, 2, 4]`，其余报纸按自然日逐日尝试。周报/隔日报（讽刺与幽默、中华读书报、文摘报）批量下载时会对非出版日产生「未找到任何版面」告警。**修复方向**：改为统一读取 `config` 的 `update_days`。
+
+### 2. 部分报纸的 update_days 与实际出版频率不符
+
+`config.json` / `DEFAULT_CONFIG` 中中华读书报、文摘报的 `update_days` 均为全天 `[0..6]`，界面因此显示「每日出版」，与 README 声明的「周三」「周三/周六」不一致。**修复方向**：中华读书报改 `[2]`、文摘报改 `[2, 5]`（需与上述第 1 项一并处理才有实际效果）。
+
+### 3. 测试依赖真实网络
+
+`test_downloader_functions.py` 与 `_e2e_test.py` 均为联网脚本，无 mock，CI 不稳定。**修复方向**：补充基于 mock 的单元测试。
+
+### 4. 批量完成信号参数语义不清
+
+`BatchDownloadWorker.complete_signal` 发送 3 个参数（成功/无版面/失败），而 `DownloadController._on_batch_complete` 只接收 2 个（PySide6 会自动丢弃多余参数）。行为正常，但语义容易误读。
 
 ---
 
 ## 相关文档
 
-- [根 README](../README.md) — 用户向说明、功能介绍、使用指南
-- [PLAN.md](../PLAN.md) — 项目审计、改进计划、待办清单
+本仓库三份文档分工如下，避免内容重复：
+
+- [根 README](../README.md) — **用户向**：功能介绍、下载安装、使用说明、支持的报纸、版本历史
+- 本文档（docs/README.md） — **开发向**：架构、目录结构、下载器体系、添加新报纸、GUI、配置、构建发布、排错、已知限制
+- [PLAN.md](../PLAN.md) — **路线图**：审计结论、改进优先级、变更记录

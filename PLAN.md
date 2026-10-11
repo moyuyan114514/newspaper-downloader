@@ -1,85 +1,55 @@
-# Plan for Review and Improvement
+# 项目审计与改进计划
 
-This document outlines recommended actions to audit, refine and bring the Newspaper Downloader project into a robust, maintainable state. It is intended to be a living artifact that evolves as we implement changes.
-
-1) Current state snapshot
-- Language/stack: Python 3.x, PySide6 (GUI), requests, BeautifulSoup, PyPDF2, PyInstaller in requirements.
-- Structure: a modular downloader system with a base downloader and per-paper implementations; a GUI layer; a config system with a singleton config object; CLI entry at root and tests that exercise downloaders.
-- Versioning: The repository is not currently a Git working tree (per environment note). There is a .gitignore and sample config/build artifacts in the tree.
-- Documentation: README contains a broad overview and build steps; docs folder contains architecture and MVP specs.
-
-2) Observations and potential gaps (high level)
-- Inconsistent config: DEFAULT_CONFIG in code vs config.json in repo. This can cause confusion when new developers rely on defaults before custom config files are loaded.
-- Version control: No git repo initialized. This makes collaboration, history and branching brittle. A Git workflow will help track changes from plan to build.
-- Tests: Tests exist but rely on live network calls. That reduces reliability and makes CI brittle. Needs mocked tests and a standalone test harness.
-- Logging: A logger utility exists but the code paths shown primarily emit GUI/log signals. Centralized file-based logging could be strengthened to aid debugging and audits.
-- Code hygiene: Some modules import utilities (e.g., logger) but do not consistently consume them; there are compiled artefacts in the tree (build/, dist/, __pycache__) that should be ignored or cleaned in a VCS workflow.
-- API surface / coupling: The downloader modules share a lot of logic but implement bespoke HTML parsing. Consider consolidating common pieces and introducing more tests around edge cases (missing pages, HTML structure changes).
-- Documentation: A Plan.md would help align stakeholders; consider a lightweight developer guide and contribution guidelines.
-
-3) Proposed plan options
-Option 1: Quick wins (Plan A) – get repo into a solid ready-to-build state
-- Initialize a Git repository with a standard .gitignore (already present) and a README that documents how to run tests, build and run the app.
-- Add PLAN.md (this file) detailing goals and milestones.
-- Align config defaults: unify DEFAULT_CONFIG with config.json; ensure all papers declared in config.json exist in code and tests.
-- Introduce a small test harness using pytest with mocks to exercise downloader interfaces without real network calls.
-- Wire up a basic CI workflow (GitHub Actions) to run unit tests on push/PR.
-- Create a minimal but explicit set of unit tests for the core Base class and a couple of downloader edge cases.
-- Add a lightweight logging pathway to persist logs to a file for traceability.
-
-Option 2: Robust architecture (Plan B) – seed for future multi-source, parallel downloads
-- Define a clear component diagram in docs (textual or simple diagram) showing Plan, Downloader, Storage, GUI, and API boundary.
-- Extract common parsing utilities into a shared module; promote a single strategy for image vs PDF processing.
-- Ensure thread-safety and cancellation semantics across DownloadWorker and BatchDownloadWorker; integrate cancellation with UI reliably.
-- Introduce versioned API contracts for downloader interfaces and their EditionInfo data structure; add type hints across public APIs.
-- Build a lightweight integration test that uses a fake HTTP server (e.g., httpx/mock) to simulate a paper layout and image URLs.
-
-Option 3: Hybrid approach (Recommended default) – start with Plan A, pick key elements from Plan B as milestones
-- Combine the quick wins (plan hygiene, tests with mocks, CI) with a gradual introduction of an architecture roadmap (shared parsing utilities, contracts, improved docs).
-
-4) Deliverables and milestones (illustrative)
-- M1: Initialize git repo, add PLAN.md, ensure config alignment, add basic unit tests with mocks, add CI.
-- M2: Refactor common downloader helpers, tighten typing, introduce EditionInfo contracts, run full test suite.
-- M3: Add logging to file and enhance error handling; ensure CLI and GUI share a common run path and error codes.
-- M4: Prepare packaging scripts (PyInstaller spec) and a baseline release workflow.
-
-5) Suggested next actions (executive)
-- Confirm which plan option you prefer (Plan A, Plan B, or a hybrid).
-- If Plan A is acceptable, I will start by adding PLAN.md, syncing config defaults, and wiring up a pytest-based test suite with mocks. Then I will propose a CI workflow.
-- If you want Plan B immediately, I will draft a more formal architecture document and begin refactoring toward modular utilities and a contract-driven downloader interface.
-
-6) Risks and mitigations
-- Risk: Changing config shapes could break existing behavior. Mitigation: introduce a config compatibility layer and document default behavior in PLAN.md.
-- Risk: Tests depend on network; mitigation: use pytest mocks and a local fixture-based test server.
-- Risk: GUI logic tightly coupled with downloader; mitigation: define clear interfaces and isolate business logic from UI code.
-
-7) Concluding remark
-- The project shows solid structure and thoughtful design. A structured plan and version-control onboarding will help accelerate safe, scalable progress from plan to build.
-
-If you want, I can push the first concrete steps now (Plan A) by generating a small patch that adds PLAN.md, a minimal CONTRIBUTING.md, and a skeleton for a PyTest-based tests directory. Once you choose the option, I’ll proceed with the next patch.
+> 本文档记录报纸下载器的审计结论、改进方向与当前进度，是项目唯一的**待办 / 路线图**来源。
+> 文档分工：使用说明见根 [README.md](README.md)；开发文档见 [docs/README.md](docs/README.md)。
 
 ---
 
-## 进度更新 (2026-09-30)
+## 1. 现状快照
 
-对照第 2 节的审计结论，当前状态：
+- **技术栈**：Python 3.x + PySide6（GUI）、requests、BeautifulSoup、pypdf（缺失时回退 PyPDF2）、PyInstaller。
+- **结构**：模块化下载器体系（抽象基类 + 各报实现）、GUI 层、单例配置系统、CLI 入口与联网测试脚本。
+- **版本**：v0.6.0，支持 9 份报纸。
+- **版本控制**：已是 Git 仓库，`main` 分支与 `origin/main` 同步。
+- **产物**：`dist/电子报下载器-v0.6.0.exe`（本地构建，`dist/` 已 gitignore）；下载输出目录 `下载/`、`downloads/` 亦被忽略。
 
-| 审计项 | 状态 |
-|--------|------|
-| config 不一致（DEFAULT_CONFIG vs config.json） | ✅ 已解决——两侧同步维护 9 份报纸配置 |
-| 测试依赖真实网络 | ⏳ 未变——`test_downloader_functions.py` 仍为联网脚本；2026-09-30 已人工实测 9 份报纸近三个月历史下载并记录于 docs/README.md |
-| 未初始化 Git 仓库 | ⏳ 未变 |
-| 日志未落盘 | ⏳ 未变 |
-| 下载器解析逻辑分散 | 部分改善——新增 gmw_base 可覆盖 URL 构造与整版图提取兜底；人民日报模板参数化（PAPER_PATH），子报两行接入 |
+---
 
-本轮实际变更（详见 README 版本历史 v0.6.0）：
+## 2. 审计结论与进度
 
-- 修复光明日报元组 bug（此前完全无法下载）与光明网系历史日期失效（此前任何日期均返回最新一期）。
-- 新增讽刺与幽默、解放军报（JSON 接口直连 PDF）、中国青年报三个下载器，总计 9 份报纸。
-- 新增 png2pdf.py（PNG/JPG 报纸图片合并转 PDF）。
-- 重新打包并冒烟测试 exe。
+| 审计项 | 状态 | 说明 |
+|--------|------|------|
+| config 不一致（DEFAULT_CONFIG vs config.json） | ✅ 已解决 | 两侧同步维护 9 份报纸配置，版本号均为 0.6.0 |
+| 未初始化 Git 仓库 | ✅ 已解决 | 已建仓库并推送至 GitHub，Release v0.6.0 含安装包 |
+| 日志未落盘 | 🟡 部分解决 | `logger` 已将 WARNING/ERROR 落盘到根目录 `error_log.json`（保留最近 1000 条）；INFO/DEBUG 仍仅驻内存 |
+| 下载器解析逻辑分散 | 🟡 部分改善 | 新增 `gmw_base` 公共基类（URL 构造、整版图提取兜底）；人民日报模板参数化（`PAPER_PATH`），子报两行接入 |
+| update_days 未驱动批量日期过滤 | ❌ 待修复 | `controller.get_dates_for_range()` 仅对学习时报硬编码 `[0,2,4]`，其余报纸一律按自然日尝试；`config.update_days` 目前只用于界面显示出版频率 |
+| 中华读书报/文摘报 出版频率配置与实际不符 | ❌ 待修复 | 两者 `update_days` 均为全天 `[0..6]`，界面显示「每日出版」，与 README 声明的「周三」「周三/周六」不一致 |
+| 测试依赖真实网络 | ⏳ 未变 | `test_downloader_functions.py`、`_e2e_test.py` 均为联网脚本，无 mock，CI 不稳定 |
+| `gmw_base` 未显式列入 spec.hiddenimports | 🟡 低风险 | 经 `guangming`/`zhonghuadushu`/`wenzhai`/`zqb` 传递导入，打包实测正常；显式列出更稳妥 |
+| 批量完成信号参数不匹配 | 🟡 低风险 | `BatchDownloadWorker.complete_signal` 发 3 个参数，`_on_batch_complete` 只接收 2 个（PySide6 自动丢弃多余参数），行为正常但语义不清 |
 
-已知的站点侧遗留问题（代码无法修复）：
+---
 
-- 中华读书报自 2026-09-16 起在 epaper.gmw.cn 停更。
-- mrdx.cn 页面上的"PDF下载"按钮为死链，新华每日电讯只能走图片路线。
+## 3. 建议的下一步（按优先级）
+
+1. **让批量日期过滤真正读取 `config.update_days`**：去掉 `get_dates_for_range()` 中对学习时报的硬编码，改为按当前报纸配置过滤。
+2. **修正出版频率配置**：中华读书报 `[2]`、文摘报 `[2, 5]`（需与第 1 项一并落地才有实际效果）。
+3. **补充基于 mock 的单元测试**，替换或补充现有联网脚本，为 CI 打基础。
+4. **显式补齐 `spec.hiddenimports` 中的 `src.downloaders.gmw_base`**。
+5. **统一批量完成信号参数**（成功 / 无版面 / 失败），消除语义歧义。
+
+---
+
+## 4. 已知站点侧遗留问题（代码无法修复）
+
+- 中华读书报自 2026-09-16 起在 `epaper.gmw.cn` 停更（站点侧问题），此前的历史期仍可下载。
+- `mrdx.cn` 页面上的「PDF下载」按钮为死链，新华每日电讯只能走图片路线（JPG → PDF）。
+
+---
+
+## 5. 变更记录
+
+- **2026-10-11**：新增「日期区间」批量下载模式，用户可任选起止日期逐日下载（上限 62 天，超出自动截断）。
+- **2026-10-03**：整理文档结构，三份文档去重并明确分工（用户向 / 开发向 / 路线图）；核对代码与文档，补入上表新发现的审计项。
+- **2026-09-30**：v0.6.0 发布。修复光明日报元组 bug（此前完全无法下载）与光明网系历史日期失效（此前任何日期均返回最新一期）；新增讽刺与幽默、解放军报（JSON 接口直连 PDF）、中国青年报三个下载器，总计 9 份报纸；新增 `png2pdf.py`；重绘界面主题；修复进度条不动的两个原因；重新打包并冒烟测试 exe。
