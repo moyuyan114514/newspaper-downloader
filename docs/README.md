@@ -425,8 +425,21 @@ Config 单例 (config.py)
 
 ```bash
 pyinstaller newspaper_downloader.spec --noconfirm
-# 输出: dist/电子报下载器-v0.7.0.exe
+# 输出: dist/电子报下载器-v0.7.0.exe （onefile 单文件版，启动时自解压到 %TEMP%）
 ```
+
+### 目录版构建（可选，推荐随 Release 一起提供）
+
+`newspaper_downloader_ondir.spec` 是 onedir 变体：不做运行时自解压，**完全不依赖系统临时目录**，
+可规避 onefile 在个别环境下报 "Could not create temporary directory!" 闪退的问题。
+
+```bash
+pyinstaller newspaper_downloader_ondir.spec --noconfirm
+# 输出: dist/电子报下载器-v0.7.0-目录版/ 文件夹（入口 exe 在其中，整体分发）
+```
+
+- 目录版产物为文件夹（约 146 MB），发布时打成 zip（资产名建议用 ASCII，避免 gh 上传中文名乱码）
+- **修改下载器/模块清单时，两个 spec 的 `hiddenimports` 要同步维护**
 
 ### spec 文件注意事项
 
@@ -439,12 +452,12 @@ pyinstaller newspaper_downloader.spec --noconfirm
 ### 发布流程
 
 1. 更新版本号（见下方"版本号位置"）
-2. 本地构建并测试 exe
+2. 本地构建两个版本并分别冒烟测试（双击后窗口存活即可）
 3. 提交代码并 push 到 GitHub
-4. 创建 Release 并上传 exe：
+4. 创建 Release 并上传资产（单文件 exe + 目录版 zip，资产名用 ASCII）：
 
 ```bash
-gh release create v0.7.0 dist/电子报下载器-v0.7.0.exe \
+gh release create v0.7.0 NewspaperDownloader-v0.7.0.exe NewspaperDownloader-v0.7.0-portable.zip \
   --title "v0.7.0" \
   --notes-file release_notes.md
 ```
@@ -456,6 +469,7 @@ gh release create v0.7.0 dist/电子报下载器-v0.7.0.exe \
 | `config.json` | `version` |
 | `src/config.py` | `DEFAULT_CONFIG["version"]` 和 `version` 属性的 fallback |
 | `newspaper_downloader.spec` | `name='电子报下载器-vX.Y.Z'` |
+| `newspaper_downloader_ondir.spec` | `name='电子报下载器-vX.Y.Z-目录版'`（EXE 与 COLLECT 两处） |
 | `README.md` | 下载链接、版本历史、项目结构图 |
 | `docs/README.md` | 三处 exe 文件名引用 |
 | `PLAN.md` | 版本引用 |
